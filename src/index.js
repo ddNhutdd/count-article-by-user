@@ -1,17 +1,70 @@
-import React from 'react';
+import React, { Component } from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import axios from "axios";
+
+
+class App extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			users: []
+		};
+	}
+
+	componentDidMount() {
+		const getUsers = axios.get("http://localhost:3001/api/users");
+		const getArticle = axios.get("http://localhost:3001/api/articles");
+		axios
+			.all([getUsers, getArticle])
+			.then(
+				axios.spread((res1, res2) => {
+					const users = res1.data.map(user => {
+						return {
+							...user,
+							article: res2.data.filter(item => {
+								return item.user_id === user.id;
+							})
+						};
+					});
+					this.setState({ users: users });
+				})
+			)
+			.catch(err => {
+				throw err;
+			});
+	}
+
+	render() {
+		const { users } = this.state;
+		return (
+			<div>
+				<h1>Users</h1>
+				<table>
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Article numbers</th>
+						</tr>
+					</thead>
+					<tbody>
+						{users.map(user => (
+							<tr key={user.id}>
+								<td> {user.name} </td>
+								<td> {user.article.length} </td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		);
+	}
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+	<React.StrictMode>
+		<App />
+	</React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+
